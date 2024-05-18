@@ -76,7 +76,7 @@ async def monitorar_e_enviar():
 
                     # Verificar o tempo de inatividade do teclado e do mouse
                     if keyboard_idle_time >= 15 or mouse_idle_time >= 15:
-                        await enviar_informacoes(websocket, Info(ipv4_address, [], f"Teclado: {keyboard_idle_time} segundos, Mouse: {mouse_idle_time} segundos"))
+                        await enviar_informacoes(websocket, Info(ipv4_address, "Teclado: {keyboard_idle_time} segundos, Mouse: {mouse_idle_time} segundos"))
 
                     # Incrementar o tempo de inatividade
                     keyboard_idle_time += 2
