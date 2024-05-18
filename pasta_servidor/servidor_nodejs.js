@@ -2,27 +2,56 @@ const WebSocket = require('ws');
 
 const wss = new WebSocket.Server({ port: 8080 });
 
-wss.on('connection', function connection(ws) {
-  console.log('Cliente conectado');
+// Object to store connected users along with their names and IP addresses
+const connectedUsers = {};
+
+wss.on('connection', function connection(ws, req) {
+  console.log('Client connected');
+  let userData
+
+  ws.once('message', function firstMessage(message) {
+    userData = JSON.parse(message);
+    const ip = req.socket.remoteAddress;
+    console.log(ip)
+    connectedUsers[ip] = { userData: userData, updates: {} }; // Initialize updates object
+    console.log('User connected:', userData.username);
+  });
 
   ws.on('message', function incoming(message) {
-    // console.log('Mensagem recebida: %s', message);
-    console.log('%s', message);
-    // Aqui você pode processar a mensagem recebida, por exemplo, gravar em um banco de dados.
+    const updates = JSON.parse(message);
+
+    const test = {
+      user: {
+        ...userData
+      },
+      ...updates,
+      status: setStatus(updates.idle_time)
+    }
+
+    console.log(test)
+
   });
 
   ws.on('error', function error(err) {
-    console.error('Erro na conexão:', err);
+    console.error('Connection error:', err);
   });
 
   ws.on('close', function close() {
-    console.log('Cliente desconectado');
+    console.log('Client disconnected');
+    const ip = req.socket.remoteAddress;
+    delete connectedUsers[ip];
   });
 });
 
 wss.on('error', function error(err) {
-  console.error('Erro no servidor WebSocket:', err);
+  console.error('WebSocket server error:', err);
 });
 
+console.log('WebSocket server is listening on port 8080');
 
-console.log('Servidor WebSocket está escutando na porta 8080');
+function setStatus(idle_time) {
+  if(idle_time > 0)
+    return "idle"
+
+  return "online"
+}
