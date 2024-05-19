@@ -1,57 +1,57 @@
-const WebSocket = require('ws');
+const WebSocket = require("ws");
 
 const wss = new WebSocket.Server({ port: 8080 });
+const connected = new Set();
 
-// Object to store connected users along with their names and IP addresses
-const connectedUsers = {};
-
-wss.on('connection', function connection(ws, req) {
-  console.log('Client connected');
-  let userData
-
-  ws.once('message', function firstMessage(message) {
-    userData = JSON.parse(message);
-    const ip = req.socket.remoteAddress;
-    console.log(ip)
-    connectedUsers[ip] = { userData: userData, updates: {} }; // Initialize updates object
-    console.log('User connected:', userData.username);
+wss.on("connection", function connection(ws, req) {
+  console.log("Client connected");
+  connected.add(ws);
+  let userData;
+  
+  ws.once("message", function firstMessage(message) {
+    message = JSON.parse(message);
   });
+  
+  ws.on("message", function incoming(message) {
+    const info = JSON.parse(message);
+    console.log(info)
 
-  ws.on('message', function incoming(message) {
-    const updates = JSON.parse(message);
-
-    const test = {
-      user: {
-        ...userData
-      },
-      ...updates,
-      status: setStatus(updates.idle_time)
+    const data = {
+      ...userData,
+      ...info,
+      status: getStatus(info.idle_time)
     }
 
-    console.log(test)
-
+    connected.forEach((admin) => {
+      ws.send(JSON.stringify(data))
+    })
+    ws.send(JSON.stringify(data))
   });
 
-  ws.on('error', function error(err) {
-    console.error('Connection error:', err);
+  ws.on("error", function error(err) {
+    console.error("Connection error:", err);
   });
 
-  ws.on('close', function close() {
-    console.log('Client disconnected');
-    const ip = req.socket.remoteAddress;
-    delete connectedUsers[ip];
+  ws.on("close", function close() {
+    console.log("Client disconnected");
+    // const ip = userData.user.ipv4_address;
+    // const userIndex = connectedUsers.findIndex(user => user.ip === ip);
+    // if (userIndex !== -1) {
+    //   connectedUsers.splice(userIndex, 1); // Remove user from the connectedUsers array
+    // }
   });
 });
 
-wss.on('error', function error(err) {
-  console.error('WebSocket server error:', err);
+wss.on("error", function error(err) {
+  console.error("WebSocket server error:", err);
 });
 
-console.log('WebSocket server is listening on port 8080');
+console.log("WebSocket server is listening on port 8080");
 
-function setStatus(idle_time) {
-  if(idle_time > 0)
-    return "idle"
+function sendUserUpdates(user) {
+  user.ws.send(JSON.stringify(user.userData)); // Send updates to the specific user
+}
 
-  return "online"
+function getStatus(idle_time) {
+  return idle_time > 0 ? "idle" : "online";
 }

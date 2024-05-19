@@ -25,18 +25,27 @@ class Info:
             'ipv4_address': ipv4_address,
             'username': username,
         }
-        self.programs = {}
+        self.programs = []
         self.idle_time = 0
 
-    def update_active_program_title(self, program, title):
+    def update_active_program_title(self, program_str):
         current_time = time.time()
-        if program not in self.programs:
-            self.programs[program] = {'titles': [title], 'start_time': current_time, 'total_time': 0}
+        page, folder, program = program_str.rsplit(' - ', 2) if ' - ' in program_str else (None, None, program_str)
+        program_index = self.find_program_index(program)
+        if program_index == -1:
+            self.programs.append({'name': program, 'pages': [page], 'folder': folder, 'start_time': current_time, 'total_time': 0})
+            program_index = len(self.programs) - 1  # Update the program index for the newly added program
         else:
-            if self.programs[program]['titles'][-1] != title:
-                self.programs[program]['titles'].append(title)
-            self.programs[program]['total_time'] += current_time - self.programs[program]['start_time']
-            self.programs[program]['start_time'] = current_time
+            if page and page not in self.programs[program_index]['pages']:
+                self.programs[program_index]['pages'].append(page)
+            self.programs[program_index]['total_time'] += current_time - self.programs[program_index]['start_time']
+        self.programs[program_index]['start_time'] = current_time
+
+    def find_program_index(self, program_name):
+        for index, program in enumerate(self.programs):
+            if program['name'] == program_name:
+                return index
+        return -1
 
     def to_dict(self):
         return {
@@ -57,7 +66,6 @@ def get_active_window_title():
 async def enviar_informacoes(websocket, info):
     info_dict = info.to_dict()
     info_json = json.dumps(info_dict)
-    print(info_json)
     await websocket.send(info_json)
 
 async def monitorar_e_enviar():
@@ -90,12 +98,6 @@ async def monitorar_e_enviar():
         info = Info(ipv4_address, username)
         async with websockets.connect(uri) as websocket:
             # Send user data upon connection
-            active_title = get_active_window_title()
-            if active_title:
-                program, title = active_title.rsplit(' - ', 1) if ' - ' in active_title else (active_title, "")
-                info.update_active_program_title(program, title)
-            await enviar_informacoes(websocket, info)
-                    
             while True:
                 active_title = get_active_window_title()
 
@@ -114,8 +116,7 @@ async def monitorar_e_enviar():
                     last_active_title = active_title
                     last_idle_time = idle_time
                     if active_title:
-                        program, title = active_title.rsplit(' - ', 1) if ' - ' in active_title else (active_title, "")
-                        info.update_active_program_title(program, title)
+                        info.update_active_program_title(active_title)
                     await enviar_informacoes(websocket, info)
 
                 await asyncio.sleep(1)  # Adjust time interval as needed
