@@ -24,22 +24,34 @@ class Info:
         self.user = {
             'ipv4_address': ipv4_address,
             'username': username,
+            'role': ""
         }
         self.programs = []
         self.idle_time = 0
 
     def update_active_program_title(self, program_str):
         current_time = time.time()
-        page, folder, program = program_str.rsplit(' - ', 2) if ' - ' in program_str else (None, None, program_str)
+        if ' - ' in program_str:
+            page, folder, program = program_str.rsplit(' - ', 2)
+        else:
+            page, folder, program = None, None, program_str
+
         program_index = self.find_program_index(program)
         if program_index == -1:
+        # Program not found, add it to the list
             self.programs.append({'name': program, 'pages': [page], 'folder': folder, 'start_time': current_time, 'total_time': 0})
-            program_index = len(self.programs) - 1  # Update the program index for the newly added program
         else:
+        # Program found, update its details
             if page and page not in self.programs[program_index]['pages']:
                 self.programs[program_index]['pages'].append(page)
             self.programs[program_index]['total_time'] += current_time - self.programs[program_index]['start_time']
-        self.programs[program_index]['start_time'] = current_time
+            self.programs[program_index]['start_time'] = current_time
+
+        # Remove the program from its current position and append it to the end
+            program_info = self.programs.pop(program_index)
+            self.programs.append(program_info)
+
+
 
     def find_program_index(self, program_name):
         for index, program in enumerate(self.programs):
@@ -93,11 +105,11 @@ async def monitorar_e_enviar():
     
     keyboard_listener.start()
     mouse_listener.start()
-    
+
     try:
         info = Info(ipv4_address, username)
         async with websockets.connect(uri) as websocket:
-            # Send user data upon connection
+            await enviar_informacoes(websocket, info)
             while True:
                 active_title = get_active_window_title()
 
@@ -110,14 +122,14 @@ async def monitorar_e_enviar():
                 else:
                     idle_time = 0
 
-                info.idle_time = idle_time
+                info.idle_time = idle_time 
 
                 if active_title != last_active_title or idle_time != last_idle_time:
                     last_active_title = active_title
                     last_idle_time = idle_time
                     if active_title:
                         info.update_active_program_title(active_title)
-                    await enviar_informacoes(websocket, info)
+                        await enviar_informacoes(websocket, info)
 
                 await asyncio.sleep(1)  # Adjust time interval as needed
     except (websockets.exceptions.ConnectionClosedError, websockets.exceptions.InvalidURI, websockets.exceptions.InvalidHandshake, TimeoutError) as e:

@@ -1,31 +1,40 @@
 const WebSocket = require("ws");
 
 const wss = new WebSocket.Server({ port: 8080 });
-const connected = new Set();
+const connectedUsers = new Map(); // Store connections with their identifiers
 
 wss.on("connection", function connection(ws, req) {
   console.log("Client connected");
-  connected.add(ws);
   let userData;
   
   ws.once("message", function firstMessage(message) {
     message = JSON.parse(message);
+
+    message.role &&
+      connectedUsers.set(message.role, ws) && console.log("Admin connected");
   });
-  
+
   ws.on("message", function incoming(message) {
     const info = JSON.parse(message);
-    console.log(info)
+
+    !info.role && console.log(info)
 
     const data = {
       ...userData,
       ...info,
-      status: getStatus(info.idle_time)
-    }
+      status: getStatus(info.idle_time),
+    };
+    // if(data.user.role) {
+    //   console.log(data.user)
+    // }
+    
+    // data.user.role = "desenvolvedor"
+    
 
-    connected.forEach((admin) => {
-      ws.send(JSON.stringify(data))
-    })
-    ws.send(JSON.stringify(data))
+    const adminConnection = connectedUsers.get('admin');
+    if (adminConnection) {
+      !info.role && adminConnection.send(JSON.stringify({ type: 'update', data }));
+    }
   });
 
   ws.on("error", function error(err) {
@@ -47,10 +56,6 @@ wss.on("error", function error(err) {
 });
 
 console.log("WebSocket server is listening on port 8080");
-
-function sendUserUpdates(user) {
-  user.ws.send(JSON.stringify(user.userData)); // Send updates to the specific user
-}
 
 function getStatus(idle_time) {
   return idle_time > 0 ? "idle" : "online";
