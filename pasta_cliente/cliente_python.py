@@ -31,12 +31,23 @@ class Info:
 
     def update_active_program_title(self, program_str):
         current_time = time.time()
-        if ' - ' in program_str:
-            page, folder, program = program_str.rsplit(' - ', 2)
+
+        hyphen_count = program_str.count(' - ')
+
+        page = '' 
+        folder = '' 
+        program = ''
+        programInfo = program_str.rsplit(' - ', hyphen_count)
+
+        if len(programInfo) == 3:
+            page, folder, program = programInfo
+        elif len(programInfo) == 2:
+            page, program = programInfo
         else:
-            page, folder, program = None, None, program_str
+            program = program_str
 
         program_index = self.find_program_index(program)
+
         if program_index == -1:
         # Program not found, add it to the list
             self.programs.append({'name': program, 'pages': [page], 'folder': folder, 'start_time': current_time, 'total_time': 0})

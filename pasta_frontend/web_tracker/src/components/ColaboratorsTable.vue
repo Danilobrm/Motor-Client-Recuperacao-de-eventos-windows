@@ -1,12 +1,6 @@
 <script setup>
 import TableRow from './TableRow.vue'
-
-defineProps({
-  colaboradores: {
-    type: Array,
-  },
-})
-// import colaboradores from '../data/websocket.js';
+const colaboradores = JSON.parse(localStorage.getItem('colaboradores')) 
 
 
 </script>

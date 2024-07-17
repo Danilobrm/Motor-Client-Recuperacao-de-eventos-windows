@@ -26,6 +26,7 @@ import { RouterView } from 'vue-router'
   justify-content: space-between;
   padding: 43px 0;
   position: fixed;
+  top: 0;
 }
 
 .nav {

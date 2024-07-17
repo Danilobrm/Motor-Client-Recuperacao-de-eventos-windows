@@ -1,5 +1,9 @@
 <script setup>
-import MonitorHeading from "../components/MonitorHeading.vue"
+import MonitorHeading from '../components/MonitorHeading.vue'
+defineProps({
+  
+})
+
 </script>
 
 <template>
@@ -10,7 +14,7 @@ import MonitorHeading from "../components/MonitorHeading.vue"
 
 <style>
 .monitor {
-  margin: 52px 26px 52px calc(132px + 26px);
+  /* margin: 52px 26px 52px calc(132px + 26px); */
   display: flex;
   flex-direction: column;
   width: 100%;

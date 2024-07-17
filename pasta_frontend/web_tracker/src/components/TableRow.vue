@@ -1,7 +1,5 @@
 <script setup>
 import { ref } from 'vue'
-
-// const bookmarkIcon = "fa-regular fa-bookmark" ? "fa fa-bookmark"
 const selected = ref(false)
 
 defineProps({
@@ -13,17 +11,28 @@ defineProps({
 </script>
 
 <template>
-  <RouterLink to="/colaborador" class="colaborator">
+  <button
+    @click="
+      $router.push({
+        name: `colaborador`,
+        params: { username: colaborador.user.username }
+      })
+    "
+    class="colaborator"
+  >
     <td class="name">
       {{ colaborador.user.username }}
-      <p>{{ colaborador.user.role }}</p>
+      <p>{{ colaborador.user.role || 'desenvolvedor' }}</p>
     </td>
-  </RouterLink>
+  </button>
   <td class="status">
     <p :class="colaborador.status">{{ colaborador.status }}</p>
   </td>
   <td class="ip">{{ colaborador.user.ipv4_address }}</td>
-  <td class="activity">{{ colaborador.programs[colaborador.programs.length - 1].name }}</td>
+  <td v-if="colaborador.programs[colaborador.programs.length - 1].name" class="activity">
+    {{ colaborador.programs[colaborador.programs.length - 1].name }}
+  </td>
+
   <td class="bookmark" @click="selected = !selected">
     <p><i :class="[selected ? 'fa fa-bookmark' : 'fa-regular fa-bookmark']"></i></p>
   </td>
@@ -55,8 +64,10 @@ td {
 }
 
 .colaborator {
-  text-decoration: none
-
+  text-decoration: none;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
 }
 
 .status {
@@ -75,7 +86,7 @@ td {
 
 .activity {
   width: 300px;
-} 
+}
 
 .status p {
   width: 121px;
